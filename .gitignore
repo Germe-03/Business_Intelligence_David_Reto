@@ -1,0 +1,27 @@
+# Datenbankdateien (zu gross für Git – lokal hinzufügen, siehe README)
+Data/flughafendb_large/
+Data/external/*
+!Data/external/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Modelle (gross, separat teilen)
+models/*.pkl
+models/*.joblib
+
+# IDE
+.idea/
+.vscode/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Sonstiges
+*.log
+.DS_Store
