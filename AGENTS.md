@@ -47,3 +47,8 @@ pytest tests/e2e/                        # E2E Tests
 - Architektur-Detail: `docs/CLEAN_ARCH.md`
 - Datenbankschema: `docs/DATA_SCHEMA.md`
 - TDD-Regeln: `docs/TDD.md`
+- MMI / UX-Prinzipien: `docs/MMI_PRINCIPLES.md`
+
+## MMI-REGEL (immer gültig)
+Beim Schreiben von Dashboard-Code (`dashboard/`) gilt:
+ISO 9241 einhalten → `docs/MMI_PRINCIPLES.md` laden.
