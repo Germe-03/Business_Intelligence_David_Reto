@@ -5,7 +5,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from src.application.explain_runway_decision import RunwayDecisionContext
 from src.domain.runway import SuitabilityStatus
+from src.infrastructure.ollama_explainer import OllamaRunwayExplainer
 from src.interfaces.runway_controller import (
     RunwayCandidateView,
     RunwayDecisionController,
@@ -61,6 +63,7 @@ def render_runway_recommendation_page() -> None:
 
     _render_decision(recommendation.best)
     _render_metrics(recommendation.best)
+    _render_ai_explanation(inputs=inputs, recommendation=recommendation)
 
     if st.session_state.detail_mode == "Details":
         left, right = st.columns([1, 1])
@@ -182,6 +185,98 @@ def _render_metrics(best: RunwayCandidateView) -> None:
     col2.metric("Gegenwind", f"{best.headwind_kmh:.0f} km/h")
     col3.metric("Seitenwind", f"{best.crosswind_kmh:.0f} km/h")
     col4.metric("Rueckenwind", f"{best.tailwind_kmh:.0f} km/h")
+
+
+def _render_ai_explanation(
+    inputs: dict[str, object],
+    recommendation: RunwayRecommendationView,
+) -> None:
+    _inject_chat_styles()
+    with st.popover(
+        "Chat",
+        icon=":material/chat:",
+        help="Lokale KI-Erklaerung",
+        key="runway_chat_popover",
+        width=420,
+    ):
+        st.markdown("**Lokale KI-Erklaerung**")
+        st.caption("Nutzt automatisch das zuletzt aktualisierte lokale Ollama-Modell.")
+        generate = st.button(
+            "Erklaerung generieren",
+            key="generate_ai_explanation",
+            width="stretch",
+        )
+
+        if not generate:
+            return
+
+        context = _build_decision_context(inputs, recommendation.best)
+        explainer = OllamaRunwayExplainer()
+        with st.spinner("Lokale KI formuliert die Begruendung..."):
+            result = explainer.explain(context)
+
+        if result.error_message:
+            st.warning(result.error_message)
+        with st.chat_message("assistant"):
+            st.write(result.text)
+        st.caption(f"Quelle: {result.source}")
+
+
+def _inject_chat_styles() -> None:
+    st.markdown(
+        """
+        <style>
+        .st-key-runway_chat_popover {
+            position: fixed;
+            right: 1.5rem;
+            bottom: 1.5rem;
+            z-index: 10000;
+        }
+        .st-key-runway_chat_popover button {
+            width: 3.75rem;
+            height: 3.75rem;
+            border-radius: 999px;
+            padding: 0;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+        }
+        .st-key-runway_chat_popover button p {
+            display: none;
+        }
+        .st-key-runway_chat_popover button span {
+            margin: 0;
+            font-size: 1.7rem;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _build_decision_context(
+    inputs: dict[str, object],
+    best: RunwayCandidateView,
+) -> RunwayDecisionContext:
+    return RunwayDecisionContext(
+        runway_number=best.runway_number,
+        status_label=best.status_label,
+        confidence_percent=best.confidence_percent,
+        aircraft_label=AIRCRAFT_OPTIONS[str(inputs["aircraft_category"])],
+        wind_speed_kmh=float(inputs["wind_speed_kmh"]),
+        gust_speed_kmh=(
+            float(inputs["gust_speed_kmh"])
+            if inputs.get("gust_speed_kmh") is not None
+            else None
+        ),
+        wind_direction_deg=float(inputs["wind_direction_deg"]),
+        visibility_m=int(inputs["visibility_m"]),
+        precipitation_label=PRECIPITATION_OPTIONS[str(inputs["precipitation"])],
+        thunderstorm=bool(inputs["thunderstorm"]),
+        headwind_kmh=best.headwind_kmh,
+        crosswind_kmh=best.crosswind_kmh,
+        tailwind_kmh=best.tailwind_kmh,
+        limitations=best.limitations,
+        rationale=best.rationale,
+    )
 
 
 def _score_chart(recommendation: RunwayRecommendationView) -> go.Figure:
