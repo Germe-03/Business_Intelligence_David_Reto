@@ -3,7 +3,7 @@ from src.application.explain_runway_decision import (
     build_fallback_explanation,
     build_runway_explanation_prompt,
 )
-from src.infrastructure.ollama_explainer import select_latest_model_name
+from src.infrastructure.ollama_explainer import OllamaRunwayExplainer, select_latest_model_name
 
 
 def test_builds_prompt_with_operational_guardrails():
@@ -36,6 +36,25 @@ def test_selects_latest_local_ollama_model_by_modified_at():
     assert select_latest_model_name(models) == "gemma3:latest"
 
 
+def test_ollama_explainer_uses_fallback_when_no_local_model_exists():
+    result = _NoModelExplainer().explain(_context())
+
+    assert result.source == "fallback"
+    assert "Piste 28" in result.text
+    assert "kein lokales Modell installiert" in result.error_message
+
+
+def test_ollama_explainer_uses_configured_model_response():
+    explainer = _StaticOllamaExplainer(model="llama3.2:latest")
+
+    result = explainer.explain(_context())
+
+    assert result.source == "ollama:llama3.2:latest"
+    assert result.text == "Piste 28 bleibt die beste Empfehlung."
+    assert explainer.last_payload["model"] == "llama3.2:latest"
+    assert explainer.last_payload["stream"] is False
+
+
 def _context(
     limitations: tuple[str, ...] = (),
 ) -> RunwayDecisionContext:
@@ -56,3 +75,18 @@ def _context(
         limitations=limitations,
         rationale=("Gegenwind stabilisiert den Start",),
     )
+
+
+class _NoModelExplainer(OllamaRunwayExplainer):
+    def latest_model_name(self) -> str | None:
+        return None
+
+
+class _StaticOllamaExplainer(OllamaRunwayExplainer):
+    def __init__(self, model: str) -> None:
+        super().__init__(model=model)
+        self.last_payload = {}
+
+    def _post_json(self, path: str, payload: dict[str, object]) -> dict[str, object]:
+        self.last_payload = payload
+        return {"response": "Piste 28 bleibt die beste Empfehlung."}

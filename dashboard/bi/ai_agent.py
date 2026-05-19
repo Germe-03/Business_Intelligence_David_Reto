@@ -103,7 +103,10 @@ def _schema_block() -> str:
 
 
 def _sanitize_sql(sql: str) -> str:
-    sql = sql.strip().rstrip(";")
+    sql = sql.strip()
+    if ";" in sql.rstrip(";"):
+        raise ValueError("Nur eine einzelne SQL-Abfrage erlaubt.")
+    sql = sql.rstrip(";").strip()
     forbidden = re.compile(
         r"\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|ATTACH|COPY|EXPORT|PRAGMA|SET)\b",
         re.IGNORECASE,

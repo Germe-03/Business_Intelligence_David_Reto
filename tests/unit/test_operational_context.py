@@ -2,12 +2,21 @@ from src.application.operational_context import (
     AircraftProfileSummary,
     BookingLoadSummary,
     BuildOperationalContext,
+    LoadOperationalSelectionOptions,
     OperationalContext,
     OperationalSelectionOptions,
     SelectOption,
     TrafficLoadSummary,
     WeatherHistorySummary,
 )
+from src.infrastructure.dump_operational_context import (
+    _angular_diff,
+    _capacity_category,
+    _safe_average,
+    _weather_condition_mask,
+    _weather_label,
+)
+import pandas as pd
 
 
 def test_build_operational_context_delegates_to_repository():
@@ -25,6 +34,43 @@ def test_build_operational_context_delegates_to_repository():
 
     assert context.aircraft.category == "medium"
     assert repository.last_call == (228, "Regen", 24, 280, 11, 2009)
+
+
+def test_load_selection_options_delegates_to_repository():
+    repository = _FakeOperationalRepository()
+    use_case = LoadOperationalSelectionOptions(repository)
+
+    options = use_case.execute()
+
+    assert options.aircraft_types[0].label == "Airbus-A320-Familie"
+
+
+def test_angular_diff_wraps_around_zero_degree_boundary():
+    diffs = _angular_diff(pd.Series([350, 10, 180]), 0)
+
+    assert diffs.tolist() == [10, 10, 180]
+
+
+def test_weather_condition_mask_matches_exact_label_or_all():
+    values = pd.Series(["Regen-Gewitter", "Nebel-Regen", "Schneefall", None])
+
+    mask = _weather_condition_mask(values, "Regen-Gewitter")
+
+    assert mask.tolist() == [True, False, False, False]
+    assert _weather_condition_mask(values, "__all__").tolist() == [True, True, True, True]
+
+
+def test_weather_and_aircraft_labels_are_user_readable():
+    assert _weather_label("__all__") == "Alle Wetterlagen"
+    assert _weather_label("Regen") == "Regen"
+    assert _capacity_category(50) == "light"
+    assert _capacity_category(180) == "medium"
+    assert _capacity_category(320) == "heavy"
+
+
+def test_safe_average_handles_empty_counts():
+    assert _safe_average(10, 0) is None
+    assert _safe_average(9, 3) == 3
 
 
 class _FakeOperationalRepository:
