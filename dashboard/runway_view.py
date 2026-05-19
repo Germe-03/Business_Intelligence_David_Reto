@@ -14,6 +14,11 @@ from src.application.operational_context import (
 )
 from src.domain.runway import SuitabilityStatus
 from src.infrastructure.dump_operational_context import DumpOperationalContextRepository
+from src.infrastructure.meteoswiss_weather import (
+    LiveWeatherSnapshot,
+    MeteoSwissWeatherError,
+    fetch_live_weather,
+)
 from src.infrastructure.ollama_explainer import OllamaRunwayExplainer
 from src.interfaces.runway_controller import (
     RunwayCandidateView,
@@ -31,6 +36,9 @@ DEFAULT_INPUTS = {
     "departure_hour": 11,
     "detail_mode": "Details",
 }
+
+LIVE_WEATHER_STATION = "KLO"
+LIVE_WEATHER_STATION_LABEL = "Flughafen Zuerich / Kloten"
 
 STATUS_COLORS = {
     "Empfohlen": "#2E7D32",
@@ -59,6 +67,11 @@ def _selection_options_use_case() -> LoadOperationalSelectionOptions:
     return LoadOperationalSelectionOptions(_operational_repository())
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def _live_weather(station_code: str) -> LiveWeatherSnapshot:
+    return fetch_live_weather(station_code)
+
+
 def render_runway_recommendation_page() -> None:
     options = _selection_options_use_case().execute()
     _ensure_state(options)
@@ -71,6 +84,7 @@ def render_runway_recommendation_page() -> None:
 
     _render_decision(recommendation.best)
     _render_metrics(recommendation.best)
+    _render_live_weather_details(inputs.get("live_weather_snapshot"))
     _render_ai_explanation(inputs=inputs, recommendation=recommendation, context=context)
 
     if st.session_state.detail_mode == "Details":
@@ -102,6 +116,8 @@ def _ensure_state(options: OperationalSelectionOptions) -> None:
     )
     st.session_state.setdefault("weather_condition", "__all__")
     st.session_state.setdefault("destination_airport_id", "__all__")
+    st.session_state.setdefault("live_weather_loaded", False)
+    st.session_state.setdefault("live_weather_loaded_station", None)
     for key, value in DEFAULT_INPUTS.items():
         st.session_state.setdefault(key, value)
 
@@ -113,6 +129,7 @@ def _render_sidebar(options: OperationalSelectionOptions) -> dict[str, object]:
 
     with st.sidebar:
         st.header("Eingaben")
+        live_snapshot = _render_live_weather_controls(weather_labels)
         st.selectbox(
             "Flugzeugtyp",
             options=list(aircraft_labels.keys()),
@@ -154,7 +171,7 @@ def _render_sidebar(options: OperationalSelectionOptions) -> dict[str, object]:
             key="weather_condition",
         )
         st.slider(
-            "Temperatur (C)",
+            "Temperatur (Grad C)",
             min_value=-30,
             max_value=45,
             step=1,
@@ -183,8 +200,11 @@ def _render_sidebar(options: OperationalSelectionOptions) -> dict[str, object]:
             st.session_state.aircraft_type_id = _default_aircraft_type_id(options)
             st.session_state.weather_condition = "__all__"
             st.session_state.destination_airport_id = "__all__"
-            for key, value in DEFAULT_INPUTS.items():
-                st.session_state[key] = value
+            if live_snapshot is not None:
+                _apply_live_weather(live_snapshot, weather_labels)
+            else:
+                for key, value in DEFAULT_INPUTS.items():
+                    st.session_state[key] = value
             st.rerun()
 
     gust_speed = st.session_state.gust_speed_kmh
@@ -198,7 +218,82 @@ def _render_sidebar(options: OperationalSelectionOptions) -> dict[str, object]:
         "temperature_c": st.session_state.temperature_c,
         "departure_hour": st.session_state.departure_hour,
         "destination_airport_id": _parse_optional_int(st.session_state.destination_airport_id),
+        "live_weather_snapshot": live_snapshot,
     }
+
+
+def _render_live_weather_controls(
+    weather_labels: dict[str, str],
+) -> LiveWeatherSnapshot | None:
+    snapshot = _load_live_weather_snapshot()
+    if snapshot is None:
+        st.caption(f"Live-Wetter: {LIVE_WEATHER_STATION_LABEL} nicht verfuegbar.")
+        return None
+
+    if (
+        not st.session_state.live_weather_loaded
+        or st.session_state.live_weather_loaded_station != snapshot.station_code
+    ):
+        _apply_live_weather(snapshot, weather_labels)
+        st.session_state.live_weather_loaded = True
+        st.session_state.live_weather_loaded_station = snapshot.station_code
+
+    measured = snapshot.measured_at_local.strftime("%d.%m.%Y %H:%M")
+    st.caption(
+        f"Live-Wetter: {LIVE_WEATHER_STATION_LABEL}, {measured} Lokalzeit. "
+        "Messwerte sind unten vorbelegt; Sichtweite bleibt manuell, falls MeteoSchweiz "
+        "keinen aktuellen Wert liefert."
+    )
+
+    if st.button("Livewerte aktualisieren", width="stretch"):
+        _live_weather.clear()
+        refreshed = _load_live_weather_snapshot()
+        if refreshed is not None:
+            _apply_live_weather(refreshed, weather_labels)
+            st.session_state.live_weather_loaded = True
+            st.session_state.live_weather_loaded_station = refreshed.station_code
+        st.rerun()
+
+    return snapshot
+
+
+def _load_live_weather_snapshot() -> LiveWeatherSnapshot | None:
+    try:
+        return _live_weather(LIVE_WEATHER_STATION)
+    except MeteoSwissWeatherError as exc:
+        st.warning(
+            f"Live-Wetter konnte nicht geladen werden: {exc} "
+            "Die Eingaben bleiben manuell bearbeitbar."
+        )
+        return None
+
+
+def _apply_live_weather(
+    snapshot: LiveWeatherSnapshot,
+    weather_labels: dict[str, str],
+) -> None:
+    st.session_state.wind_speed_kmh = _bounded_int(snapshot.wind_speed_kmh, 0, 120)
+    if snapshot.gust_speed_kmh is not None:
+        st.session_state.gust_speed_kmh = _bounded_int(snapshot.gust_speed_kmh, 0, 150)
+    st.session_state.wind_direction_deg = _bounded_int(
+        round(snapshot.wind_direction_deg / 5) * 5,
+        0,
+        360,
+    )
+    st.session_state.temperature_c = _bounded_int(snapshot.temperature_c, -30, 45)
+    if snapshot.visibility_m is not None:
+        st.session_state.visibility_m = _bounded_int(snapshot.visibility_m, 200, 10000)
+    if (
+        snapshot.derived_weather_condition is not None
+        and snapshot.derived_weather_condition in weather_labels
+    ):
+        st.session_state.weather_condition = snapshot.derived_weather_condition
+    elif st.session_state.weather_condition in {"Regen", "Schneefall", "Regen-Schneefall"}:
+        st.session_state.weather_condition = "__all__"
+
+
+def _bounded_int(value: float, minimum: int, maximum: int) -> int:
+    return max(minimum, min(maximum, int(round(value))))
 
 
 def _load_operational_context(inputs: dict[str, object]) -> OperationalContext:
@@ -250,6 +345,47 @@ def _render_metrics(best: RunwayCandidateView) -> None:
     col4.metric("Rueckenwind", f"{best.tailwind_kmh:.0f} km/h")
 
 
+def _render_live_weather_details(snapshot: object) -> None:
+    if not isinstance(snapshot, LiveWeatherSnapshot):
+        return
+
+    with st.expander("Live-Wetterdaten MeteoSchweiz", expanded=False):
+        measured = snapshot.measured_at_local.strftime("%d.%m.%Y %H:%M")
+        st.caption(
+            f"{LIVE_WEATHER_STATION_LABEL}, Messzeit {measured} Lokalzeit. "
+            "Quelle: MeteoSchweiz Open Data / STAC."
+        )
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Luftfeuchte", _format_optional(snapshot.humidity_pct, "%"))
+        col2.metric("Taupunkt", _format_optional(snapshot.dewpoint_c, " C"))
+        col3.metric("QNH", _format_optional(snapshot.pressure_qnh_hpa, " hPa"))
+        col4.metric("QFE", _format_optional(snapshot.pressure_qfe_hpa, " hPa"))
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Niederschlag 10 min", _format_optional(snapshot.precipitation_10min_mm, " mm"))
+        col2.metric("Schneehoehe", _format_optional(snapshot.snow_depth_cm, " cm"))
+        col3.metric("Sonne 10 min", _format_optional(snapshot.sunshine_10min_min, " min"))
+        col4.metric("Globalstrahlung", _format_optional(snapshot.global_radiation_wm2, " W/m2"))
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Windchill", _format_optional(snapshot.windchill_c, " C"))
+        col2.metric("Foehnindex", _format_optional(snapshot.foehn_index, ""))
+        col3.metric(
+            "Bewoelkung visuell",
+            _format_optional(snapshot.visual_cloud_cover_pct, "%"),
+        )
+
+        condition = snapshot.derived_weather_condition or "Keine besondere Wetterlage"
+        visibility = (
+            f"{snapshot.visibility_m} m"
+            if snapshot.visibility_m is not None
+            else "Nicht als aktueller KLO-Livewert verfuegbar"
+        )
+        st.caption(f"Abgeleitete Wetterlage: {condition}. Sichtweite: {visibility}.")
+        if snapshot.visual_observation_note:
+            st.info(snapshot.visual_observation_note)
+
+
 def _render_ai_explanation(
     inputs: dict[str, object],
     recommendation: RunwayRecommendationView,
@@ -260,7 +396,6 @@ def _render_ai_explanation(
         "Chat",
         icon=":material/chat:",
         help="Lokale KI-Erklaerung",
-        key="runway_chat_popover",
         width=420,
     ):
         st.markdown("**Lokale KI-Erklaerung**")
