@@ -323,7 +323,7 @@ def _kepler_arcs(limit: int = 400) -> pd.DataFrame:
           AND gf.latitude IS NOT NULL
           AND gt.latitude IS NOT NULL
         GROUP BY from_iata, from_lat, from_lon, to_iata, to_lat, to_lon
-        HAVING flights > 50
+        HAVING flights > 0
         ORDER BY flights DESC
         LIMIT ?
         """,
@@ -346,7 +346,7 @@ def _kepler_heat() -> pd.DataFrame:
         WHERE f.from_id = ?
           AND g.latitude IS NOT NULL
         GROUP BY ts, lat, lon
-        HAVING bookings > 500
+        HAVING bookings > 0
         ORDER BY bookings DESC
         LIMIT 5000
         """,
