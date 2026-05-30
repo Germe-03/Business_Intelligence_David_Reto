@@ -60,7 +60,7 @@ def fetch_live_weather(station_code: str = "KLO") -> LiveWeatherSnapshot:
     asset = assets.get(f"ogd-smn_{station}_t_now.csv")
     if not asset:
         raise MeteoSwissWeatherError(
-            f"Keine 10-Minuten-Livewerte fuer Station {station_code.upper()} gefunden."
+            f"Keine 10-Minuten-Livewerte für Station {station_code.upper()} gefunden."
         )
 
     csv_url = str(asset["href"])
@@ -68,7 +68,7 @@ def fetch_live_weather(station_code: str = "KLO") -> LiveWeatherSnapshot:
     frame = pd.read_csv(StringIO(csv_text), sep=";", na_values="-")
     if frame.empty:
         raise MeteoSwissWeatherError(
-            f"MeteoSchweiz lieferte keine Livewerte fuer {station_code.upper()}."
+            f"MeteoSchweiz lieferte keine Livewerte für {station_code.upper()}."
         )
 
     latest = frame.dropna(subset=["reference_timestamp"]).iloc[-1]
@@ -137,7 +137,7 @@ def _fetch_visual_observation(station_code: str) -> dict:
         item = _get_json(OBS_ITEM_URL.format(station=station))
         asset = item.get("assets", {}).get(f"ogd-obs_{station}_d_recent.csv")
         if not asset:
-            return {"note": "Keine visuellen Beobachtungen fuer diese Station verfuegbar."}
+            return {"note": "Keine visuellen Beobachtungen für diese Station verfügbar."}
         frame = pd.read_csv(StringIO(_get_text(str(asset["href"]))), sep=";", na_values="-")
     except MeteoSwissWeatherError:
         return {"note": "Visuelle Beobachtungen konnten nicht geladen werden."}

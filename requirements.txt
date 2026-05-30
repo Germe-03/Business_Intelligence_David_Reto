@@ -14,3 +14,4 @@ folium>=0.16
 streamlit-folium>=0.21
 streamlit-keplergl>=0.3
 requests
+pytest>=8.0

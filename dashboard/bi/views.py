@@ -1,4 +1,4 @@
-"""Render-Funktionen fuer die fuenf Tabs des BI-Dashboards."""
+"""Render-Funktionen für die fünf Tabs des BI-Dashboards."""
 from __future__ import annotations
 
 import math
@@ -50,9 +50,9 @@ def _flights_cte(filt: BIFilter) -> tuple[str, list]:
 # Tab 1 - Overview
 # ---------------------------------------------------------------------------
 def render_overview(filt: BIFilter) -> None:
-    st.subheader("Management-Uebersicht")
+    st.subheader("Management-Übersicht")
     st.caption(
-        "Schneller Ueberblick fuer Management. KPIs beziehen sich auf den oben"
+        "Schneller Überblick für Management. KPIs beziehen sich auf den oben"
         " gesetzten Filter."
     )
 
@@ -101,7 +101,7 @@ def render_overview(filt: BIFilter) -> None:
     avg_bpf = float(load_df["avg_bpf"].iloc[0] or 0)
 
     cols = st.columns(5)
-    cols[0].metric("Fluege", f"{n_flights:,}".replace(",", "'"))
+    cols[0].metric("Flüge", f"{n_flights:,}".replace(",", "'"))
     cols[1].metric("Buchungen", f"{bookings:,}".replace(",", "'"))
     cols[2].metric("Umsatz", f"CHF {revenue/1e6:,.2f} Mio".replace(",", "'"))
     cols[3].metric("Ticketpreis im Schnitt", f"CHF {avg_price:,.2f}".replace(",", "'"))
@@ -109,7 +109,7 @@ def render_overview(filt: BIFilter) -> None:
 
     st.caption(f"Buchungen pro Flug im Schnitt: {avg_bpf:.1f}")
 
-    st.markdown("##### Fluege pro Tag")
+    st.markdown("##### Flüge pro Tag")
     trend = query_df(
         cte
         + """
@@ -123,11 +123,11 @@ def render_overview(filt: BIFilter) -> None:
         tuple(params),
     )
     if trend.empty:
-        st.info("Keine Daten im gewaehlten Filter.")
+        st.info("Keine Daten im gewählten Filter.")
         return
     fig = px.area(
         trend, x="day", y="flights",
-        labels={"day": "Datum", "flights": "Anzahl Fluege"},
+        labels={"day": "Datum", "flights": "Anzahl Flüge"},
         color_discrete_sequence=["#2E7D32"],
     )
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=20, b=10))
@@ -212,7 +212,7 @@ def render_operations(filt: BIFilter) -> None:
 
     left, right = st.columns([3, 2])
     with left:
-        st.markdown("##### Top 15 Destinationen (Fluege)")
+        st.markdown("##### Top 15 Destinationen (Flüge)")
         if top_dest.empty:
             st.info("Keine Daten.")
         else:
@@ -236,7 +236,7 @@ def render_operations(filt: BIFilter) -> None:
             pivot = pivot.reindex(["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"])
             fig = px.imshow(
                 pivot, color_continuous_scale="Blues", aspect="auto",
-                labels=dict(color="Fluege"),
+                labels=dict(color="Flüge"),
             )
             fig.update_layout(height=480, margin=dict(l=10, r=10, t=20, b=10))
             st.plotly_chart(fig, use_container_width=True)
@@ -273,7 +273,7 @@ def render_operations(filt: BIFilter) -> None:
             ))
         fig.add_trace(go.Scattergeo(
             lon=geo["longitude"], lat=geo["latitude"],
-            text=geo.apply(lambda r: f"{r['iata']} - {r['city']} ({int(r['flights'])} Fluege)", axis=1),
+            text=geo.apply(lambda r: f"{r['iata']} - {r['city']} ({int(r['flights'])} Flüge)", axis=1),
             mode="markers",
             marker=dict(
                 size=8 + (geo["flights"] / geo["flights"].max() * 20),
@@ -389,7 +389,7 @@ def render_revenue(filt: BIFilter) -> None:
 
     with c2:
         gender_totals = pd.DataFrame({
-            "Geschlecht": ["Maennlich", "Weiblich", "Sonstige/Unbekannt"],
+            "Geschlecht": ["Männlich", "Weiblich", "Sonstige/Unbekannt"],
             "Buchungen": [int(demo["male"].sum()), int(demo["female"].sum()), int(demo["other"].sum())],
         })
         fig = px.pie(gender_totals, names="Geschlecht", values="Buchungen",
@@ -404,7 +404,7 @@ def render_revenue(filt: BIFilter) -> None:
 def render_weather(filt: BIFilter) -> None:
     st.subheader("Wetter & Runway-Empfehlung")
     st.caption(
-        "Wetterhistorie aus weatherdata. Fuer die operative Pisten-Empfehlung"
+        "Wetterhistorie aus weatherdata. Für die operative Pisten-Empfehlung"
         " bitte die Seite 'Runway Empfehlung' nutzen."
     )
 
@@ -445,7 +445,7 @@ def render_weather(filt: BIFilter) -> None:
 
     cols = st.columns(2)
     with cols[0]:
-        st.markdown("##### Wetterlagen-Haeufigkeit")
+        st.markdown("##### Wetterlagen-Häufigkeit")
         if weather.empty:
             st.info("Keine Wetterdaten im Datumsbereich.")
         else:
@@ -508,7 +508,7 @@ def render_weather(filt: BIFilter) -> None:
         (filt.date_from, filt.date_to),
     )
     if daily.empty:
-        st.info("Keine Tagesmittel verfuegbar.")
+        st.info("Keine Tagesmittel verfügbar.")
     else:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=daily["day"], y=daily["temp_c"],
@@ -526,8 +526,8 @@ def render_weather(filt: BIFilter) -> None:
         st.plotly_chart(fig, use_container_width=True)
 
     st.info(
-        "Fuer einen konkreten Vorschlag pro Wind/Wetter-Kombination und Flugzeugtyp"
-        " den Seitenmenuepunkt **Runway Empfehlung** oeffnen."
+        "Für einen konkreten Vorschlag pro Wind/Wetter-Kombination und Flugzeugtyp"
+        " den Seitenmenüpunkt **Runway Empfehlung** öffnen."
     )
 
 
@@ -536,7 +536,7 @@ def render_weather(filt: BIFilter) -> None:
 # ---------------------------------------------------------------------------
 def render_analytics(filt: BIFilter) -> None:
     st.subheader("Analyse & Drill-down")
-    st.caption("Auslastung nach Flugzeugtyp, Saisonalitaet, Flotten-Treemap.")
+    st.caption("Auslastung nach Flugzeugtyp, Saisonalität, Flotten-Treemap.")
 
     cte, params = _flights_cte(filt)
 

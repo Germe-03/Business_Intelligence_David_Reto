@@ -18,13 +18,13 @@ def test_builds_prompt_with_operational_guardrails():
 
 
 def test_fallback_explanation_mentions_best_runway_and_limits():
-    context = _context(limitations=("Sichtweite 700 m eingeschraenkt",))
+    context = _context(limitations=("Sichtweite 700 m eingeschränkt",))
 
     explanation = build_fallback_explanation(context)
 
     assert "Piste 28" in explanation
     assert "87% Konfidenz" in explanation
-    assert "Sichtweite 700 m eingeschraenkt" in explanation
+    assert "Sichtweite 700 m eingeschränkt" in explanation
 
 
 def test_selects_latest_local_ollama_model_by_modified_at():

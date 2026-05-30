@@ -18,14 +18,17 @@ from dashboard.bi.views import (
 
 
 st.set_page_config(
-    page_title="BI Dashboard - Flughafen Zuerich",
+    page_title="BI Dashboard - Demo-Flugdaten",
     layout="wide",
 )
 
 st.title("BI-Dashboard")
 st.caption(
-    "Flughafen Zuerich - Analyse von Flugbetrieb, Buchungen, Umsatz und Wetter."
-    " Filter wirken auf alle Tabs (ausser Wetter, das nur auf Datum reagiert)."
+    "Analyse von Flugbetrieb, Buchungen, Umsatz und Wetter auf Basis einer"
+    " öffentlichen Demo-Flugdatenbank (rund 13'500 Flughäfen weltweit, nicht"
+    " Zürich-spezifisch). Links unter 'Datenquelle' auf Abflüge ab Zürich"
+    " einschränkbar. Filter wirken auf alle Tabs (ausser Wetter, das nur auf"
+    " Datum reagiert)."
 )
 
 filt = render_filters()
@@ -33,7 +36,7 @@ st.markdown(f"**Aktive Filter:** {filter_summary_caption(filt)}")
 
 overview_tab, operations_tab, revenue_tab, weather_tab, analytics_tab = st.tabs(
     [
-        "Uebersicht",
+        "Übersicht",
         "Betrieb",
         "Umsatz",
         "Wetter",

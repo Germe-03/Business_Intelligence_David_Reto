@@ -1,4 +1,4 @@
-"""Sidebar-Filter fuer das BI-Dashboard.
+"""Sidebar-Filter für das BI-Dashboard.
 
 Liefert ein BIFilter-Objekt + die SQL-WHERE-Fragmente, damit jede Tab-Funktion
 die gleichen Selektionen anwenden kann.
@@ -12,6 +12,7 @@ import pandas as pd
 import streamlit as st
 
 from dashboard.bi.data_layer import (
+    ZRH_AIRPORT_ID,
     aircraft_types_lookup,
     airlines_lookup,
     airports_lookup,
@@ -23,8 +24,12 @@ ALL_AIRLINES = "Alle Airlines"
 ALL_AIRCRAFT = "Alle Flugzeugtypen"
 ALL_DESTINATIONS = "Alle Destinationen"
 
+SCOPE_ALL = "Alle Flughäfen (Demo-DB)"
+SCOPE_ZRH = "Nur Abflüge ab Zürich (ZRH)"
+
 FILTER_STATE_KEYS = (
     "bi_date_range",
+    "bi_origin_scope",
     "bi_airline_choice",
     "bi_aircraft_choice",
     "bi_destination_choice",
@@ -41,6 +46,7 @@ class BIFilter:
     aircraft_label: str
     destination_airport_id: int | None
     destination_label: str
+    origin_zrh_only: bool
 
     def flight_where_clause(self) -> tuple[str, list]:
         clauses = [
@@ -51,6 +57,9 @@ class BIFilter:
             pd.Timestamp(self.date_from).to_pydatetime(),
             (pd.Timestamp(self.date_to) + pd.Timedelta(days=1)).to_pydatetime(),
         ]
+        if self.origin_zrh_only:
+            clauses.append("f.from_id = ?")
+            params.append(ZRH_AIRPORT_ID)
         if self.airline_id is not None:
             clauses.append("f.airline_id = ?")
             params.append(self.airline_id)
@@ -69,10 +78,29 @@ def render_filters() -> BIFilter:
     default_to = max_dt.date()
 
     st.sidebar.header("Filter")
-    if st.sidebar.button("Filter zuruecksetzen", use_container_width=True):
+    if st.sidebar.button("Filter zurücksetzen", use_container_width=True):
         for key in FILTER_STATE_KEYS:
             st.session_state.pop(key, None)
         st.rerun()
+
+    _ensure_choice("bi_origin_scope", [SCOPE_ALL, SCOPE_ZRH], SCOPE_ALL)
+    origin_scope = st.sidebar.radio(
+        "Datenquelle",
+        [SCOPE_ALL, SCOPE_ZRH],
+        index=[SCOPE_ALL, SCOPE_ZRH].index(st.session_state.bi_origin_scope),
+        key="bi_origin_scope",
+        help=(
+            "Die Demo-Datenbank umfasst rund 13'500 Flughäfen weltweit; standardmässig"
+            " werden alle ausgewertet. 'Nur ab Zürich' filtert auf Abflüge ab ZRH -"
+            " davon enthält der Dump allerdings nur rund 52 Flüge."
+        ),
+    )
+    origin_zrh_only = origin_scope == SCOPE_ZRH
+    if origin_zrh_only:
+        st.sidebar.warning(
+            "ZRH-Ansicht: nur rund 52 Abflüge ab Zürich im Dump. Viele Tabs zeigen"
+            " wenig oder keine Daten - ggf. den Datumsbereich aufweiten."
+        )
 
     date_range = st.sidebar.date_input(
         "Datumsbereich (Abflug)",
@@ -157,11 +185,13 @@ def render_filters() -> BIFilter:
         aircraft_label=aircraft_label,
         destination_airport_id=destination_airport_id,
         destination_label=destination_label,
+        origin_zrh_only=origin_zrh_only,
     )
 
 
 def filter_summary_caption(filt: BIFilter) -> str:
     parts = [
+        "Nur ab ZRH" if filt.origin_zrh_only else "Alle Flughäfen",
         f"{filt.date_from:%d.%m.%Y} - {filt.date_to:%d.%m.%Y}",
         filt.airline_label,
         filt.aircraft_label,

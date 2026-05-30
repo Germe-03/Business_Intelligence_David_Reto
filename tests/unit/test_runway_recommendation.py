@@ -34,7 +34,7 @@ def test_marks_runway_not_suitable_when_tailwind_exceeds_limit():
     assert result.best.runway.number == "28"
     assert result.best.status == SuitabilityStatus.NOT_SUITABLE
     assert result.best.tailwind_kmh > 30
-    assert "Rueckenwind" in " ".join(result.best.limitations)
+    assert "Rückenwind" in " ".join(result.best.limitations)
 
 
 def test_normalizes_wind_direction_before_scoring():

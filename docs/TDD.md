@@ -13,9 +13,11 @@
 ```
 
 ## Regeln
-- Unit Tests: **kein** DB-Zugriff, **kein** File-IO → Fake-Repositories via Port-ABCs
+- Unit Tests: **kein** DB-Zugriff, **kein** File-IO → Fake-Repositories via Port-Protocols (`typing.Protocol`)
 - Integration Tests: echte DB-Verbindung, echter CSV-Loader
 - E2E Tests: Streamlit app läuft, Eingabe → Output korrekt
+
+> Aktueller Stand: nur Unit-Tests im Runway-`src/`-Pfad vorhanden; `tests/integration` und `tests/e2e` sind angelegt, aber leer. Die BI/OSINT/DuckDB-Module sind ungetestet.
 
 ## Befehle
 ```bash

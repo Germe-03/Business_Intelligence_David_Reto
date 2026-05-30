@@ -1,9 +1,9 @@
 """Minimaler OpenSky Network Client.
 
 OpenSky bietet die /states/all Route gedrosselt anonym; mit Account-Login
-gibt es laengere Cache-Zeiten und hoehere Limits. Wir cachen das Ergebnis
-fuer 30 Sekunden via Streamlit, damit ein Tab-Wechsel keinen neuen Call
-ausloest.
+gibt es längere Cache-Zeiten und höhere Limits. Wir cachen das Ergebnis
+für 30 Sekunden via Streamlit, damit ein Tab-Wechsel keinen neuen Call
+auslöst.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ import streamlit as st
 
 _BASE_URL = "https://opensky-network.org/api/states/all"
 
-# Bounding-Box "rund um Zuerich" - knapp 200 km Radius
+# Bounding-Box "rund um Zürich" - knapp 200 km Radius
 ZRH_BBOX = dict(lamin=46.0, lamax=48.6, lomin=6.5, lomax=11.0)
 ZRH_LAT = 47.4647
 ZRH_LON = 8.5492

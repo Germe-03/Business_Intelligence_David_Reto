@@ -118,7 +118,7 @@ def evaluate_runway(
     if crosswind_ratio > 1:
         disqualifying = True
         limitations.append(
-            f"Seitenwind {abs(crosswind):.0f} km/h ueber Limit "
+            f"Seitenwind {abs(crosswind):.0f} km/h über Limit "
             f"{limits.crosswind_limit_kmh:.0f} km/h"
         )
     elif crosswind_ratio >= 0.8:
@@ -138,21 +138,21 @@ def evaluate_runway(
         if tailwind_ratio > 1:
             disqualifying = True
             limitations.append(
-                f"Rueckenwind {tailwind:.0f} km/h ueber Limit "
+                f"Rückenwind {tailwind:.0f} km/h über Limit "
                 f"{limits.tailwind_limit_kmh:.0f} km/h"
             )
         else:
-            limitations.append(f"Rueckenwind {tailwind:.0f} km/h")
+            limitations.append(f"Rückenwind {tailwind:.0f} km/h")
 
     gust_penalty = _gust_penalty(weather)
     if gust_penalty:
         score -= gust_penalty
-        limitations.append("Boeen erhoehen die Unsicherheit")
+        limitations.append("Böen erhöhen die Unsicherheit")
 
     visibility_penalty = _visibility_penalty(weather.visibility_m)
     if visibility_penalty:
         score -= visibility_penalty
-        limitations.append(f"Sichtweite {weather.visibility_m} m eingeschraenkt")
+        limitations.append(f"Sichtweite {weather.visibility_m} m eingeschränkt")
 
     precipitation = weather.precipitation.strip().lower()
     precipitation_penalty = PRECIPITATION_PENALTIES.get(precipitation, 10)

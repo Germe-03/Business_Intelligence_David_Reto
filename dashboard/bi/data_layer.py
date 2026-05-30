@@ -1,8 +1,8 @@
-"""DuckDB-Layer ueber die zstd-komprimierten TSV-Dumps.
+"""DuckDB-Layer über die zstd-komprimierten TSV-Dumps.
 
 DuckDB liest .tsv.zst direkt (read_csv mit compression='zstd'), aggregiert
 die 24 Booking-Chunks (~54 Mio Zeilen) on the fly und vermeidet das Laden
-der Daten in Pandas. Conn ist Streamlit-cached und wird ueber alle Tabs
+der Daten in Pandas. Conn ist Streamlit-cached und wird über alle Tabs
 geteilt.
 """
 from __future__ import annotations
@@ -203,7 +203,7 @@ def _empty_view_sql(table: str) -> str:
 
 
 def _table_has_data(table: str) -> bool:
-    """Heuristik: zstd-Empty-Frames sind <= 20 Bytes; echte Datenfiles deutlich groesser."""
+    """Heuristik: zstd-Empty-Frames sind <= 20 Bytes; echte Datenfiles deutlich grösser."""
     pattern = _TABLE_GLOBS[table]
     matches = sorted(DATA_DIR.glob(pattern))
     return any(p.stat().st_size > 20 for p in matches)
@@ -285,6 +285,6 @@ def _show_missing_duckdb() -> None:
         "Das BI-Datenmodul kann nicht gestartet werden, weil das Paket "
         "`duckdb` in dieser Python-Umgebung fehlt."
     )
-    st.info("Installiere die Projekt-Abhaengigkeiten und starte Streamlit danach neu.")
+    st.info("Installiere die Projekt-Abhängigkeiten und starte Streamlit danach neu.")
     st.code("pip install -r requirements.txt", language="bash")
     st.stop()

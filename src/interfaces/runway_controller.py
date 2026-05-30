@@ -8,7 +8,7 @@ from src.domain.runway import RunwaySuitability, SuitabilityStatus, WeatherCondi
 
 STATUS_LABELS = {
     SuitabilityStatus.RECOMMENDED: "Empfohlen",
-    SuitabilityStatus.CAUTION: "Mit Einschraenkungen",
+    SuitabilityStatus.CAUTION: "Mit Einschränkungen",
     SuitabilityStatus.NOT_SUITABLE: "Nicht geeignet",
 }
 

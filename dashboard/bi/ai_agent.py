@@ -4,10 +4,10 @@ Statt LangChain wird hier ein schlanker, transparenter Zweistufen-Ansatz
 verwendet:
 1. LLM generiert eine SQL-Abfrage gegen das bekannte Schema.
 2. SQL wird sanity-gecheckt (nur SELECT, kein DDL/DML) und in DuckDB
-   ausgefuehrt.
+   ausgeführt.
 3. LLM formuliert die Antwort in Deutsch auf Basis des Result-Frames.
 
-User waehlt im Sidebar den Provider (OpenAI oder Anthropic) und gibt seinen
+User wählt im Sidebar den Provider (OpenAI oder Anthropic) und gibt seinen
 API-Key ein. Keys werden nur im Streamlit-Session-State gehalten, nicht
 gespeichert.
 """
@@ -25,9 +25,11 @@ from dashboard.bi.data_layer import get_connection, schema_overview
 
 
 SYSTEM_PROMPT = """Du bist ein deutschsprachiger BI-Analyst.
-Du arbeitest mit einer DuckDB, die Views ueber einen Flughafen-Datendump bereitstellt.
-Datenstand: Sommer 2015 (Juni-September), Flughafen Zuerich (airport_id = 13591).
-Die Daten enthalten Fluege, Buchungen, Passagiere und Wetter.
+Du arbeitest mit einer DuckDB, die Views über einen Flughafen-Datendump bereitstellt.
+Es ist eine generische Demo-Flugdatenbank mit rund 13'500 Flughäfen weltweit, nicht nur Zürich
+(Zürich = airport_id 13591, aber nur rund 52 Abflüge ab ZRH im Dump - keine ausgeprägte Hub-Struktur).
+Datenstand: Flüge und Buchungen aus Sommer 2015 (Juni-September); weatherdata reicht von 2005 bis 2015.
+Die Daten enthalten Flüge, Buchungen, Passagiere und Wetter.
 
 SCHEMA:
 {schema}
@@ -38,12 +40,12 @@ REGELN:
 - Limit ergebnisse auf <=200 Zeilen, ausser der Nutzer fragt explizit nach mehr.
 - Datum/Zeit-Spalten haben den passenden Typ; verwende DATE_TRUNC, EXTRACT, AGE.
 - 'from' und 'to' wurden zu 'from_id' und 'to_id' umbenannt (Reserved Words).
-- Wenn die Frage Statistiken pro Airline/Aircraft braucht: JOIN ueber airline_id bzw type_id.
-- 'flight_log' ist im Dump leer (0 Zeilen). Hinweise dazu erwaehnen, nicht queryen.
-- Gib keine technischen Schluesselspalten wie *_id, from_id oder to_id im SELECT aus.
+- Wenn die Frage Statistiken pro Airline/Aircraft braucht: JOIN über airline_id bzw type_id.
+- 'flight_log' ist im Dump leer (0 Zeilen). Hinweise dazu erwähnen, nicht queryen.
+- Gib keine technischen Schlüsselspalten wie *_id, from_id oder to_id im SELECT aus.
 
 OUTPUT-FORMAT:
-Antworte exakt im folgenden JSON-Format, ohne weitere Erklaerungen:
+Antworte exakt im folgenden JSON-Format, ohne weitere Erklärungen:
 {{"sql": "...", "explanation": "kurzer Hinweis, was abgefragt wird"}}
 """
 
@@ -53,7 +55,7 @@ ANSWER_PROMPT = """Du bist BI-Analyst. Der User hat gefragt: {question}
 Ergebnis der Abfrage (max. 20 Zeilen als Vorschau):
 {result_preview}
 
-Erklaere das Ergebnis in 3-6 Saetzen auf Deutsch (de-CH). Nenne konkrete Zahlen.
+Erkläre das Ergebnis in 3-6 Sätzen auf Deutsch (de-CH). Nenne konkrete Zahlen.
 Wenn das Ergebnis leer ist, schreibe das klar."""
 
 
@@ -77,12 +79,12 @@ DISPLAY_LABELS = {
     "avg_age": "Durchschnittsalter",
     "avg_price": "Ticketpreis im Schnitt (CHF)",
     "bookings": "Buchungen",
-    "capacity": "Sitzplaetze",
+    "capacity": "Sitzplätze",
     "country": "Land",
     "day": "Datum",
     "dest": "Destination",
     "flightno": "Flugnummer",
-    "flights": "Fluege",
+    "flights": "Flüge",
     "iata": "IATA",
     "revenue": "Umsatz (CHF)",
 }
@@ -215,8 +217,8 @@ def _is_technical_column(column: str) -> bool:
 def render_ai_agent() -> None:
     st.title("KI-Datenanalyst")
     st.caption(
-        "Frag in natuerlicher Sprache. Die Auswertung wird nur lesend berechnet"
-        " und als verstaendliche Antwort mit Tabelle gezeigt."
+        "Frag in natürlicher Sprache. Die Auswertung wird nur lesend berechnet"
+        " und als verständliche Antwort mit Tabelle gezeigt."
     )
 
     st.sidebar.subheader("KI-Konfiguration")
@@ -237,7 +239,7 @@ def render_ai_agent() -> None:
         help="Wird nur im Session-Speicher gehalten.",
     )
     st.sidebar.caption("Hinweis: Keys werden nicht persistiert.")
-    if st.sidebar.button("Verlauf zuruecksetzen", use_container_width=True):
+    if st.sidebar.button("Verlauf zurücksetzen", use_container_width=True):
         st.session_state.ai_messages = []
         st.session_state.pop("pending_question", None)
         st.rerun()
@@ -246,8 +248,8 @@ def render_ai_agent() -> None:
         st.session_state.ai_messages = []
 
     sample_questions = [
-        "Top 5 Routen ab Zuerich nach Umsatz im August 2015",
-        "Welche Wetterlage hatte den hoechsten Durchschnittswind?",
+        "Top 5 Routen ab Zürich nach Umsatz im August 2015",
+        "Welche Wetterlage hatte den höchsten Durchschnittswind?",
         "Wie viele Buchungen pro Tag im Juli 2015?",
         "Top 10 Airlines nach Sitzangebot",
     ]
@@ -262,7 +264,7 @@ def render_ai_agent() -> None:
             if msg["role"] == "assistant" and msg.get("dataframe") is not None:
                 display_df = _display_dataframe(msg["dataframe"])
                 if display_df.empty and not msg["dataframe"].empty:
-                    st.info("Das Ergebnis enthaelt nur technische Schluessel und wird daher nicht angezeigt.")
+                    st.info("Das Ergebnis enthält nur technische Schlüssel und wird daher nicht angezeigt.")
                 else:
                     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
@@ -289,7 +291,7 @@ def render_ai_agent() -> None:
                                    st.session_state.ai_messages[:-1])
             except Exception as exc:
                 error_text = (
-                    "Die Frage konnte nicht sicher in eine Auswertung uebersetzt werden. "
+                    "Die Frage konnte nicht sicher in eine Auswertung übersetzt werden. "
                     "Bitte formuliere sie konkreter, z.B. mit Datum, Kennzahl oder Airline."
                 )
                 st.error(error_text)
@@ -317,7 +319,7 @@ def render_ai_agent() -> None:
 
         display_result = _display_dataframe(result)
         if display_result.empty and not result.empty:
-            st.info("Das Ergebnis enthaelt nur technische Schluessel und wird daher nicht angezeigt.")
+            st.info("Das Ergebnis enthält nur technische Schlüssel und wird daher nicht angezeigt.")
         else:
             st.dataframe(display_result, use_container_width=True, hide_index=True)
         with st.spinner("Antwort formulieren ..."):
@@ -325,7 +327,7 @@ def render_ai_agent() -> None:
                 answer = explain_result(provider, api_key, model, question, result)
             except Exception as exc:
                 answer = (
-                    "Ergebnis siehe Tabelle. Die automatische Erklaerung ist im Moment nicht verfuegbar."
+                    "Ergebnis siehe Tabelle. Die automatische Erklärung ist im Moment nicht verfügbar."
                 )
         st.markdown(answer)
         st.session_state.ai_messages.append({

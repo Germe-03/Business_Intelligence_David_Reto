@@ -283,7 +283,7 @@ class DumpOperationalContextRepository:
                 avg_load_factor_percent=None,
                 median_load_factor_percent=None,
                 high_load_flights_percent=None,
-                note="Nur Booking-Chunk 0 geladen; keine passenden Fluege im Flight-Dump gefunden.",
+                note="Nur Booking-Chunk 0 geladen; keine passenden Flüge im Flight-Dump gefunden.",
             )
 
         load_factor = (load["bookings"] / load["capacity"] * 100).clip(upper=100)

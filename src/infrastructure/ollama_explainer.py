@@ -128,10 +128,10 @@ def _friendly_error(exc: BaseException) -> str:
         if exc.code == 404:
             return (
                 "Ollama ist erreichbar, aber das Modell wurde nicht gefunden. "
-                "Fuehre z.B. `ollama pull llama3.2` aus."
+                "Führe z.B. `ollama pull llama3.2` aus."
             )
         return f"Ollama HTTP {exc.code}: {detail[:180]}"
     return (
-        "Ollama ist lokal nicht erreichbar. Starte Ollama und pruefe "
+        "Ollama ist lokal nicht erreichbar. Starte Ollama und prüfe "
         "`http://localhost:11434`."
     )

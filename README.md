@@ -7,7 +7,7 @@ BI-Projekt von David & Reto | Flughafen Zürich Datenanalyse & Vorhersage-Dashbo
 ### 1. Repository klonen
 ```bash
 git clone <repo-url>
-cd Business_Intelligence_David_Reto
+cd gpa_bis
 ```
 
 ### 2. Abhängigkeiten installieren
@@ -37,11 +37,12 @@ streamlit run dashboard/app.py
 
 ```
 ├── Data/               # Lokale Daten (nicht im Git)
-├── etl/                # Datenladen & Bereinigung
-├── analysis/           # SQL-Queries & EDA
-├── models/             # ML-Modelle
-├── dashboard/          # Streamlit-App
-└── _skills/            # Dokumentation & Anleitungen
+├── dashboard/          # Streamlit-App (Runway, BI, OSINT, KI - Multipage)
+├── src/                # Clean-Architecture-Code der Runway-Empfehlung
+├── tests/              # pytest (unit / integration / e2e)
+├── docs/               # Detailregeln (Clean Arch, TDD, MMI, Schema)
+├── skills/             # On-demand-Anleitungen (etl, analysis, data-quality, dashboard, ml)
+└── models/             # ML-Modelle (aktuell leer)
 ```
 
 Siehe [AGENTS.md](AGENTS.md) für die Rollen der einzelnen Komponenten und [CLAUDE.md](CLAUDE.md) für den vollständigen Projektkontext.

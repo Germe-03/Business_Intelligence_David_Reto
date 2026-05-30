@@ -1,4 +1,4 @@
-"""Render-Funktionen fuer die OSINT-Erweiterungen."""
+"""Render-Funktionen für die OSINT-Erweiterungen."""
 from __future__ import annotations
 
 import math
@@ -44,17 +44,17 @@ def _format_age(server_time: pd.Timestamp) -> str:
 # OpenSky Live
 # ---------------------------------------------------------------------------
 def render_opensky_live() -> None:
-    st.title("Live-Flugverkehr rund um Zuerich")
+    st.title("Live-Flugverkehr rund um Zürich")
     st.caption(
         "Quelle: OpenSky Network. Die Karte zeigt aktuelle Flugzeuge im"
-        " gewaehlten Radius um ZRH."
+        " gewählten Radius um ZRH."
     )
     if not _folium_available():
         return
 
     with st.sidebar:
         st.subheader("OpenSky Konfiguration")
-        if st.button("Eingaben zuruecksetzen", use_container_width=True):
+        if st.button("Eingaben zurücksetzen", use_container_width=True):
             for key in ("opensky_radius_km", "opensky_user", "opensky_pw"):
                 st.session_state.pop(key, None)
             st.rerun()
@@ -83,7 +83,7 @@ def render_opensky_live() -> None:
     except Exception as exc:
         st.error(
             "OpenSky ist gerade nicht erreichbar oder lehnt die Anfrage ab. "
-            "Bitte pruefe deine Zugangsdaten oder versuche es mit einem kleineren Radius erneut."
+            "Bitte prüfe deine Zugangsdaten oder versuche es mit einem kleineren Radius erneut."
         )
         return
 
@@ -92,14 +92,14 @@ def render_opensky_live() -> None:
     cols[0].metric("Flugzeuge im Radius", stats.total)
     cols[1].metric("In der Luft", stats.airborne)
     cols[2].metric("Am Boden", stats.on_ground)
-    cols[3].metric("Laender", stats.countries)
-    cols[4].metric("Durchschnittshoehe (ft)", f"{stats.avg_altitude_ft:,.0f}".replace(",", "'"))
+    cols[3].metric("Länder", stats.countries)
+    cols[4].metric("Durchschnittshöhe (ft)", f"{stats.avg_altitude_ft:,.0f}".replace(",", "'"))
     st.caption(
         f"Server-Zeit: {stats.fetched_at:%Y-%m-%d %H:%M:%S} UTC ({_format_age(stats.fetched_at)})"
     )
 
     if df.empty:
-        st.info("Keine aktiven Flugzeuge im gewaehlten Radius.")
+        st.info("Keine aktiven Flugzeuge im gewählten Radius.")
         return
 
     map_df = df.dropna(subset=["latitude", "longitude"]).copy()
@@ -107,7 +107,7 @@ def render_opensky_live() -> None:
                       tiles="CartoDB positron")
     folium.Marker(
         location=[ZRH_LAT, ZRH_LON],
-        popup="Flughafen Zuerich (ZRH)",
+        popup="Flughafen Zürich (ZRH)",
         icon=folium.Icon(color="red", icon="plane", prefix="fa"),
     ).add_to(fmap)
 
@@ -120,7 +120,7 @@ def render_opensky_live() -> None:
         popup_html = (
             f"<b>{aircraft_label}</b><br>"
             f"{row.origin_country}<br>"
-            f"Hoehe: {altitude:,.0f} ft<br>"
+            f"Höhe: {altitude:,.0f} ft<br>"
             f"Geschwindigkeit: {speed:,.0f} km/h<br>"
             f"Kurs: {track:.0f} Grad"
         )
@@ -134,7 +134,7 @@ def render_opensky_live() -> None:
 
     st_folium(fmap, height=560, use_container_width=True, returned_objects=[])
 
-    st.markdown("##### Top-Laender")
+    st.markdown("##### Top-Länder")
     top_country = (
         df.groupby("origin_country").size().rename("Flugzeuge").reset_index()
         .sort_values("Flugzeuge", ascending=False).head(10)
@@ -159,11 +159,10 @@ def _bbox_for_radius(radius_km: int) -> dict:
 # ---------------------------------------------------------------------------
 @st.cache_data(show_spinner=False)
 def _top_routes(min_flights: int, limit: int = 250) -> pd.DataFrame:
-    """Top-Routen weltweit aus dem DB-Dump (Sommer 2015).
+    """Abflugrouten ab Zürich (ZRH) aus dem DB-Dump (Sommer 2015).
 
-    Hinweis: Die Demo-DB hat keine ausgepraegte Hub-Struktur (jeder Airport
-    hat in 3 Monaten ~50-360 Departures). Daher zeigen wir global die
-    flugreichsten Routen statt nur ZRH.
+    Hinweis: Die Demo-DB enthält nur rund 52 Abflüge ab ZRH (2 Ziele),
+    daher ist die Routenauswahl sehr klein.
     """
     return query_df(
         """
@@ -179,38 +178,40 @@ def _top_routes(min_flights: int, limit: int = 250) -> pd.DataFrame:
         LEFT JOIN airport_geo AS gf ON gf.airport_id = f.from_id
         LEFT JOIN airport AS ato ON ato.airport_id = f.to_id
         LEFT JOIN airport_geo AS gt ON gt.airport_id = f.to_id
-        WHERE gf.latitude IS NOT NULL AND gt.latitude IS NOT NULL
+        WHERE f.from_id = ?
+          AND gf.latitude IS NOT NULL AND gt.latitude IS NOT NULL
         GROUP BY af.iata, af.name, gf.latitude, gf.longitude,
                  ato.iata, ato.name, gt.city, gt.country, gt.latitude, gt.longitude
         HAVING flights >= ?
         ORDER BY flights DESC
         LIMIT ?
         """,
-        (min_flights, limit),
+        (ZRH_AIRPORT_ID, min_flights, limit),
     )
 
 
 def render_folium_routes() -> None:
-    st.title("Routen-Karte mit Live-Overlay")
+    st.title("ZRH-Routen-Karte mit Live-Overlay")
     st.caption(
-        "Die Karte zeigt die flugreichsten Routen aus dem Sommer-2015-Datensatz"
-        " und optional aktuelle Flugzeuge rund um ZRH."
+        "Die Karte zeigt die Abflugrouten ab Zürich (ZRH) aus dem Sommer-2015-Datensatz"
+        " (Demo-DB: nur rund 52 Abflüge ab ZRH, 2 Ziele) und optional aktuelle"
+        " Flugzeuge rund um ZRH."
     )
     if not _folium_available():
         return
 
     with st.sidebar:
         st.subheader("Filter")
-        if st.button("Filter zuruecksetzen", use_container_width=True):
+        if st.button("Filter zurücksetzen", use_container_width=True):
             for key in ("route_min_flights", "route_max_routes", "route_show_live"):
                 st.session_state.pop(key, None)
             st.rerun()
         min_flights = st.slider(
-            "Mindestanzahl Fluege pro Route",
-            10,
-            200,
-            50,
-            10,
+            "Mindestanzahl Flüge pro Route",
+            1,
+            30,
+            1,
+            1,
             key="route_min_flights",
         )
         max_routes = st.slider(
@@ -231,12 +232,12 @@ def render_folium_routes() -> None:
     fmap = folium.Map(location=[ZRH_LAT, ZRH_LON], zoom_start=3,
                       tiles="OpenStreetMap")
 
-    db_layer = folium.FeatureGroup(name="DB-Routen (Sommer 2015)", show=True)
+    db_layer = folium.FeatureGroup(name="ZRH-Routen (Sommer 2015)", show=True)
     cluster = MarkerCluster(name="Airports").add_to(db_layer)
 
     folium.Marker(
         location=[ZRH_LAT, ZRH_LON],
-        popup="Flughafen Zuerich (ZRH)",
+        popup="Flughafen Zürich (ZRH)",
         icon=folium.Icon(color="red", icon="plane", prefix="fa"),
     ).add_to(db_layer)
 
@@ -251,7 +252,7 @@ def render_folium_routes() -> None:
                 locations=[[row.from_lat, row.from_lon],
                            [row.to_lat, row.to_lon]],
                 color="#1565C0", weight=weight, opacity=0.45,
-                tooltip=f"{row.from_iata} - {row.to_iata}: {int(row.flights)} Fluege",
+                tooltip=f"{row.from_iata} - {row.to_iata}: {int(row.flights)} Flüge",
             ).add_to(db_layer)
             for code, lat, lon, name, sub in [
                 (row.from_iata, row.from_lat, row.from_lon, row.from_name, ""),
@@ -285,7 +286,7 @@ def render_folium_routes() -> None:
                     popup=f"{row.callsign or 'Unbekanntes Flugzeug'} ({row.origin_country})",
                 ).add_to(live_layer)
         except Exception as exc:
-            st.warning("OpenSky-Overlay ist gerade nicht verfuegbar. Die Routenkarte bleibt nutzbar.")
+            st.warning("OpenSky-Overlay ist gerade nicht verfügbar. Die Routenkarte bleibt nutzbar.")
         live_layer.add_to(fmap)
 
     folium.LayerControl(position="topright", collapsed=False).add_to(fmap)
@@ -295,7 +296,7 @@ def render_folium_routes() -> None:
         st.markdown(
             f"**{len(routes)} Routen** | Top: "
             f"{routes.iloc[0]['from_iata']} - {routes.iloc[0]['to_iata']} "
-            f"({int(routes.iloc[0]['flights'])} Fluege)"
+            f"({int(routes.iloc[0]['flights'])} Flüge)"
         )
 
 
@@ -323,7 +324,7 @@ def _kepler_arcs(limit: int = 400) -> pd.DataFrame:
           AND gf.latitude IS NOT NULL
           AND gt.latitude IS NOT NULL
         GROUP BY from_iata, from_lat, from_lon, to_iata, to_lat, to_lon
-        HAVING flights > 50
+        HAVING flights >= 1
         ORDER BY flights DESC
         LIMIT ?
         """,
@@ -346,7 +347,7 @@ def _kepler_heat() -> pd.DataFrame:
         WHERE f.from_id = ?
           AND g.latitude IS NOT NULL
         GROUP BY ts, lat, lon
-        HAVING bookings > 500
+        HAVING bookings >= 1
         ORDER BY bookings DESC
         LIMIT 5000
         """,
@@ -357,15 +358,15 @@ def _kepler_heat() -> pd.DataFrame:
 def render_kepler_heatmap() -> None:
     st.title("ZRH-Routen und Buchungs-Heatmap")
     st.caption(
-        "Interaktive Karte fuer Abfluege ab ZRH im Sommer 2015."
-        " Layer und Zeitsteuerung sind im Kartenpanel verfuegbar."
+        "Interaktive Karte für Abflüge ab ZRH im Sommer 2015."
+        " Layer und Zeitsteuerung sind im Kartenpanel verfügbar."
     )
 
     try:
         from keplergl import KeplerGl
         from streamlit_keplergl import keplergl_static
     except Exception as exc:
-        st.warning("Kepler.gl ist nicht verfuegbar. Es wird eine einfache Ersatzkarte angezeigt.")
+        st.warning("Kepler.gl ist nicht verfügbar. Es wird eine einfache Ersatzkarte angezeigt.")
         _render_pydeck_fallback()
         return
 
@@ -373,7 +374,7 @@ def render_kepler_heatmap() -> None:
     heat = _kepler_heat()
 
     if arcs.empty:
-        st.info("Keine Routen verfuegbar.")
+        st.info("Keine Routen verfügbar.")
         return
 
     config = {
@@ -449,7 +450,7 @@ def _render_pydeck_fallback() -> None:
 
     arcs = _kepler_arcs()
     if arcs.empty:
-        st.info("Keine Daten verfuegbar.")
+        st.info("Keine Daten verfügbar.")
         return
 
     max_flights = int(arcs["flights"].max() or 1)
@@ -468,7 +469,7 @@ def _render_pydeck_fallback() -> None:
     view = pdk.ViewState(latitude=ZRH_LAT, longitude=ZRH_LON, zoom=3, pitch=40)
     deck = pdk.Deck(layers=[arc_layer], initial_view_state=view,
                     map_style=None,
-                    tooltip={"text": "ZRH - {to_iata}: {flights} Fluege"})
+                    tooltip={"text": "ZRH - {to_iata}: {flights} Flüge"})
     st.pydeck_chart(deck)
 
 
@@ -479,6 +480,6 @@ def _folium_available() -> bool:
         "Die Kartenansicht kann nicht gestartet werden, weil Folium oder "
         "streamlit-folium in dieser Python-Umgebung fehlt."
     )
-    st.info("Installiere die Projekt-Abhaengigkeiten und starte Streamlit danach neu.")
+    st.info("Installiere die Projekt-Abhängigkeiten und starte Streamlit danach neu.")
     st.code("pip install -r requirements.txt", language="bash")
     return False

@@ -38,11 +38,11 @@ DEFAULT_INPUTS = {
 }
 
 LIVE_WEATHER_STATION = "KLO"
-LIVE_WEATHER_STATION_LABEL = "Flughafen Zuerich / Kloten"
+LIVE_WEATHER_STATION_LABEL = "Flughafen Zürich / Kloten"
 
 STATUS_COLORS = {
     "Empfohlen": "#2E7D32",
-    "Mit Einschraenkungen": "#EF6C00",
+    "Mit Einschränkungen": "#EF6C00",
     "Nicht geeignet": "#C62828",
 }
 
@@ -79,8 +79,8 @@ def render_runway_recommendation_page() -> None:
     context = _load_operational_context(inputs)
     recommendation = _controller().recommend(**_decision_inputs(inputs, context))
 
-    st.title("Runway-Entscheidung fuer Starts")
-    st.caption("Entscheidungsunterstuetzung fuer ZRH. Nicht fuer operative Freigaben verwenden.")
+    st.title("Runway-Entscheidung für Starts")
+    st.caption("Entscheidungsunterstützung für ZRH. Nicht für operative Freigaben verwenden.")
 
     _render_decision(recommendation.best)
     _render_metrics(recommendation.best)
@@ -144,7 +144,7 @@ def _render_sidebar(options: OperationalSelectionOptions) -> dict[str, object]:
             key="wind_speed_kmh",
         )
         st.slider(
-            "Boeen (km/h)",
+            "Böen (km/h)",
             min_value=0,
             max_value=150,
             step=1,
@@ -196,7 +196,7 @@ def _render_sidebar(options: OperationalSelectionOptions) -> dict[str, object]:
             horizontal=True,
             key="detail_mode",
         )
-        if st.button("Zuruecksetzen", width="stretch"):
+        if st.button("Zurücksetzen", width="stretch"):
             st.session_state.aircraft_type_id = _default_aircraft_type_id(options)
             st.session_state.weather_condition = "__all__"
             st.session_state.destination_airport_id = "__all__"
@@ -227,7 +227,7 @@ def _render_live_weather_controls(
 ) -> LiveWeatherSnapshot | None:
     snapshot = _load_live_weather_snapshot()
     if snapshot is None:
-        st.caption(f"Live-Wetter: {LIVE_WEATHER_STATION_LABEL} nicht verfuegbar.")
+        st.caption(f"Live-Wetter: {LIVE_WEATHER_STATION_LABEL} nicht verfügbar.")
         return None
 
     if (
@@ -342,7 +342,7 @@ def _render_metrics(best: RunwayCandidateView) -> None:
     col1.metric("Empfehlung", f"Piste {best.runway_number}", f"Score {best.score:.0f}")
     col2.metric("Gegenwind", f"{best.headwind_kmh:.0f} km/h")
     col3.metric("Seitenwind", f"{best.crosswind_kmh:.0f} km/h")
-    col4.metric("Rueckenwind", f"{best.tailwind_kmh:.0f} km/h")
+    col4.metric("Rückenwind", f"{best.tailwind_kmh:.0f} km/h")
 
 
 def _render_live_weather_details(snapshot: object) -> None:
@@ -363,15 +363,15 @@ def _render_live_weather_details(snapshot: object) -> None:
 
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Niederschlag 10 min", _format_optional(snapshot.precipitation_10min_mm, " mm"))
-        col2.metric("Schneehoehe", _format_optional(snapshot.snow_depth_cm, " cm"))
+        col2.metric("Schneehöhe", _format_optional(snapshot.snow_depth_cm, " cm"))
         col3.metric("Sonne 10 min", _format_optional(snapshot.sunshine_10min_min, " min"))
         col4.metric("Globalstrahlung", _format_optional(snapshot.global_radiation_wm2, " W/m2"))
 
         col1, col2, col3 = st.columns(3)
         col1.metric("Windchill", _format_optional(snapshot.windchill_c, " C"))
-        col2.metric("Foehnindex", _format_optional(snapshot.foehn_index, ""))
+        col2.metric("Föhnindex", _format_optional(snapshot.foehn_index, ""))
         col3.metric(
-            "Bewoelkung visuell",
+            "Bewölkung visuell",
             _format_optional(snapshot.visual_cloud_cover_pct, "%"),
         )
 
@@ -379,7 +379,7 @@ def _render_live_weather_details(snapshot: object) -> None:
         visibility = (
             f"{snapshot.visibility_m} m"
             if snapshot.visibility_m is not None
-            else "Nicht als aktueller KLO-Livewert verfuegbar"
+            else "Nicht als aktueller KLO-Livewert verfügbar"
         )
         st.caption(f"Abgeleitete Wetterlage: {condition}. Sichtweite: {visibility}.")
         if snapshot.visual_observation_note:
@@ -395,13 +395,13 @@ def _render_ai_explanation(
     with st.popover(
         "Chat",
         icon=":material/chat:",
-        help="Lokale KI-Erklaerung",
+        help="Lokale KI-Erklärung",
         width=420,
     ):
-        st.markdown("**Lokale KI-Erklaerung**")
+        st.markdown("**Lokale KI-Erklärung**")
         st.caption("Nutzt automatisch das zuletzt aktualisierte lokale Ollama-Modell.")
         generate = st.button(
-            "Erklaerung generieren",
+            "Erklärung generieren",
             key="generate_ai_explanation",
             width="stretch",
         )
@@ -411,7 +411,7 @@ def _render_ai_explanation(
 
         decision_context = _build_decision_context(inputs, recommendation.best, context)
         explainer = OllamaRunwayExplainer()
-        with st.spinner("Lokale KI formuliert die Begruendung..."):
+        with st.spinner("Lokale KI formuliert die Begründung..."):
             result = explainer.explain(decision_context)
 
         if result.error_message:
@@ -560,7 +560,7 @@ def _render_candidate_table(recommendation: RunwayRecommendationView) -> None:
             "Konfidenz": f"{candidate.confidence_percent}%",
             "Gegenwind": f"{candidate.headwind_kmh:.0f} km/h",
             "Seitenwind": f"{candidate.crosswind_kmh:.0f} km/h",
-            "Rueckenwind": f"{candidate.tailwind_kmh:.0f} km/h",
+            "Rückenwind": f"{candidate.tailwind_kmh:.0f} km/h",
             "Hinweise": "; ".join(candidate.limitations) or "Keine",
         }
         for candidate in recommendation.candidates
@@ -569,13 +569,13 @@ def _render_candidate_table(recommendation: RunwayRecommendationView) -> None:
 
 
 def _render_reasoning(best: RunwayCandidateView) -> None:
-    with st.expander(f"Begruendung fuer Piste {best.runway_number}", expanded=True):
+    with st.expander(f"Begründung für Piste {best.runway_number}", expanded=True):
         if best.rationale:
             st.markdown("**Positive Faktoren**")
             for item in best.rationale:
                 st.write(f"- {item}")
         if best.limitations:
-            st.markdown("**Einschraenkungen**")
+            st.markdown("**Einschränkungen**")
             for item in best.limitations:
                 st.write(f"- {item}")
 
@@ -598,11 +598,11 @@ def _render_operational_context(context: OperationalContext) -> None:
 def _render_weather_history(context: OperationalContext) -> None:
     weather = context.weather
     st.caption(
-        "Aehnlichkeit: Windrichtung +/-30 Grad, Windgeschwindigkeit +/-10 km/h, "
+        "Ähnlichkeit: Windrichtung +/-30 Grad, Windgeschwindigkeit +/-10 km/h, "
         f"Wetterlage: {weather.selected_weather}."
     )
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Aehnliche Messpunkte", _format_int(weather.similar_observations))
+    col1.metric("Ähnliche Messpunkte", _format_int(weather.similar_observations))
     col2.metric("Historie gesamt", _format_int(weather.total_observations))
     col3.metric("Durchschnitt Wind", _format_optional(weather.avg_wind_kmh, " km/h"))
     col4.metric("Durchschnitt Temp.", _format_optional(weather.avg_temp_c, " C"))
@@ -616,7 +616,7 @@ def _render_weather_history(context: OperationalContext) -> None:
     st.caption(f"Zeitraum im Dump: {range_text}")
 
     if not weather.top_weather:
-        st.info("Keine aehnlichen Wetterpunkte im Dump gefunden.")
+        st.info("Keine ähnlichen Wetterpunkte im Dump gefunden.")
         return
 
     weather_rows = pd.DataFrame(weather.top_weather, columns=["Wetterlage", "Treffer"])
@@ -625,7 +625,7 @@ def _render_weather_history(context: OperationalContext) -> None:
         x="Treffer",
         y="Wetterlage",
         orientation="h",
-        title="Haeufigste Wetterlagen bei aehnlichen Bedingungen",
+        title="Häufigste Wetterlagen bei ähnlichen Bedingungen",
         color_discrete_sequence=["#1565C0"],
     )
     fig.update_layout(height=300, margin=dict(l=10, r=10, t=45, b=10))
@@ -635,17 +635,17 @@ def _render_weather_history(context: OperationalContext) -> None:
 def _render_aircraft_profile(context: OperationalContext) -> None:
     aircraft = context.aircraft
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Ausgewaehlter Typ", aircraft.aircraft_type)
+    col1.metric("Ausgewählter Typ", aircraft.aircraft_type)
     col2.metric("Flugzeuge im Dump", _format_int(aircraft.aircraft_count))
-    col3.metric("Durchschnitt Kapazitaet", _format_optional(aircraft.avg_capacity, " Sitze"))
+    col3.metric("Durchschnitt Kapazität", _format_optional(aircraft.avg_capacity, " Sitze"))
     col4.metric("Abgeleitete Klasse", _category_label(aircraft.category))
 
     col1, col2 = st.columns(2)
-    col1.metric("Min. Kapazitaet", _format_optional(aircraft.min_capacity, " Sitze"))
-    col2.metric("Max. Kapazitaet", _format_optional(aircraft.max_capacity, " Sitze"))
+    col1.metric("Min. Kapazität", _format_optional(aircraft.min_capacity, " Sitze"))
+    col2.metric("Max. Kapazität", _format_optional(aircraft.max_capacity, " Sitze"))
 
     if not aircraft.top_types:
-        st.info("Keine Flugzeugtypen fuer diese Klasse gefunden.")
+        st.info("Keine Flugzeugtypen für diese Klasse gefunden.")
         return
 
     type_rows = pd.DataFrame(aircraft.top_types, columns=["Typ", "Anzahl"])
@@ -663,21 +663,21 @@ def _render_traffic_load(context: OperationalContext) -> None:
     )
     col4.metric("ZRH Starts gesamt", _format_int(traffic.total_departures))
     st.caption(
-        f"Basis: historische Abfluege ab {traffic.airport_iata}, "
+        f"Basis: historische Abflüge ab {traffic.airport_iata}, "
         f"Destination: {traffic.destination_label}, "
         f"{traffic.active_days} aktive Tage im Flight-Dump."
     )
 
     hourly = pd.DataFrame(traffic.hourly_departures, columns=["Stunde", "Starts"])
     hourly["Auswahl"] = hourly["Stunde"].eq(traffic.departure_hour).map(
-        {True: "Ausgewaehlt", False: "Andere"}
+        {True: "Ausgewählt", False: "Andere"}
     )
     fig = px.bar(
         hourly,
         x="Stunde",
         y="Starts",
         color="Auswahl",
-        color_discrete_map={"Ausgewaehlt": "#EF6C00", "Andere": "#607D8B"},
+        color_discrete_map={"Ausgewählt": "#EF6C00", "Andere": "#607D8B"},
         title="Historische ZRH-Starts nach Stunde",
     )
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=45, b=10), xaxis_dtick=1)
@@ -691,7 +691,7 @@ def _render_booking_load(context: OperationalContext) -> None:
     )
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Sample-Buchungen", _format_int(booking.sampled_bookings))
-    col2.metric("Sample-Fluege", _format_int(booking.sampled_flights))
+    col2.metric("Sample-Flüge", _format_int(booking.sampled_flights))
     col3.metric("Durchschnitt Auslastung", _format_optional(booking.avg_load_factor_percent, "%"))
     col4.metric("Median Auslastung", _format_optional(booking.median_load_factor_percent, "%"))
 
@@ -701,7 +701,7 @@ def _render_booking_load(context: OperationalContext) -> None:
         _format_optional(booking.avg_bookings_per_flight, ""),
     )
     col2.metric(
-        "Fluege >=85% Auslastung",
+        "Flüge >=85% Auslastung",
         _format_optional(booking.high_load_flights_percent, "%"),
     )
     st.caption(f"{booking.note} Quelle: {booking.sampled_chunk}.")
