@@ -205,11 +205,27 @@ Mehr Details: [`docs/CLEAN_ARCH.md`](docs/CLEAN_ARCH.md). Entwickelt wurde nach 
 Die Datendateien sind **nicht im Repository** (zu gross für Git) und müssen lokal
 hinzugefügt werden. Sie erhältst du vom Dozenten oder von David/Reto.
 
+**Wohin?** Lege im **Wurzelverzeichnis des Projekts** (auf gleicher Ebene wie `dashboard/`
+und `src/`) einen Ordner `Data/` an und kopiere die Dump-Dateien **direkt** in die
+folgenden Unterordner:
+
 ```
-Data/
-├── flughafendb_large/   ← MySQL-Dump als .tsv.zst (Flüge, Buchungen, Passagiere, Wetter)
-└── external/            ← Zürich FIDS CSVs (Ankünfte/Abflüge, semikolon-getrennt)
+Business_Intelligence_David_Reto/   ← Projekt-Wurzel (hier liegt auch README.md)
+├── dashboard/
+├── src/
+└── Data/                            ← diesen Ordner selbst anlegen
+    ├── flughafendb_large/           ← hier alle .tsv.zst + .json des MySQL-Dumps ablegen
+    │   ├── flughafendb_large@flight@@0.tsv.zst
+    │   ├── flughafendb_large@booking@0.tsv.zst
+    │   ├── flughafendb_large@weatherdata@@0.tsv.zst
+    │   ├── ...   (weitere Tabellen)
+    │   └── flughafendb_large@<table>.json   (Spaltennamen)
+    └── external/                    ← Zürich FIDS CSVs (Ankünfte/Abflüge, semikolon-getrennt)
 ```
+
+Der Pfad `Data/flughafendb_large/` ist im Code fest erwartet (siehe
+`src/infrastructure/dump_operational_context.py` und `dashboard/bi/data_layer.py`) –
+also genau so benennen.
 
 - **Datenstand:** Sommer 2015 (Juni–September), Flughafen Zürich (`airport_id = 13591`).
 - Spaltennamen stehen in `flughafendb_large@<table>.json` (Schlüssel `options.columns`).
