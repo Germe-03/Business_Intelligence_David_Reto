@@ -423,12 +423,25 @@ def _render_decision(best: RunwayCandidateView) -> None:
     elif best.status == SuitabilityStatus.CAUTION:
         st.warning(message)
     else:
-        st.error(f"Keine geeignete Startbahn. Beste Option: {message}")
+        st.error(
+            "Keine Startbahn erfuellt aktuell alle Limits. Beste Option: "
+            f"Piste {best.runway_number} (Eignungs-Score {best.score:.0f}/100, "
+            f"{best.status_label})."
+        )
 
 
 def _render_metrics(best: RunwayCandidateView) -> None:
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Empfehlung", f"Piste {best.runway_number}", f"Score {best.score:.0f}")
+    col1.metric(
+        "Empfehlung",
+        f"Piste {best.runway_number}",
+        f"Score {best.score:.0f}",
+        help=(
+            "Eignungs-Score 0-100 aus Wind-, Sicht- und Wetterbewertung. "
+            "Hoeher = besser: ab 75 empfohlen, 45-74 mit Einschraenkungen, "
+            "darunter oder bei ueberschrittenen Limits nicht geeignet."
+        ),
+    )
     col2.metric("Gegenwind", f"{best.headwind_kmh:.0f} km/h")
     col3.metric("Seitenwind", f"{best.crosswind_kmh:.0f} km/h")
     col4.metric("Rueckenwind", f"{best.tailwind_kmh:.0f} km/h")

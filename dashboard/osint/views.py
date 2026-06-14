@@ -80,7 +80,7 @@ def render_opensky_live() -> None:
                 username=username or None,
                 password=password or None,
             )
-    except Exception as exc:
+    except Exception:
         st.error(
             "OpenSky ist gerade nicht erreichbar oder lehnt die Anfrage ab. "
             "Bitte pruefe deine Zugangsdaten oder versuche es mit einem kleineren Radius erneut."
@@ -284,7 +284,7 @@ def render_folium_routes() -> None:
                     fill_opacity=0.9,
                     popup=f"{row.callsign or 'Unbekanntes Flugzeug'} ({row.origin_country})",
                 ).add_to(live_layer)
-        except Exception as exc:
+        except Exception:
             st.warning("OpenSky-Overlay ist gerade nicht verfuegbar. Die Routenkarte bleibt nutzbar.")
         live_layer.add_to(fmap)
 
@@ -364,7 +364,7 @@ def render_kepler_heatmap() -> None:
     try:
         from keplergl import KeplerGl
         from streamlit_keplergl import keplergl_static
-    except Exception as exc:
+    except Exception:
         st.warning("Kepler.gl ist nicht verfuegbar. Es wird eine einfache Ersatzkarte angezeigt.")
         _render_pydeck_fallback()
         return

@@ -290,7 +290,7 @@ def render_ai_agent() -> None:
             try:
                 llm = generate_sql(provider, api_key, model, question,
                                    st.session_state.ai_messages[:-1])
-            except Exception as exc:
+            except Exception:
                 error_text = (
                     "Die Frage konnte nicht sicher in eine Auswertung uebersetzt werden. "
                     "Bitte formuliere sie konkreter, z.B. mit Datum, Kennzahl oder Airline."
@@ -306,7 +306,7 @@ def render_ai_agent() -> None:
 
         try:
             result = run_sql(llm.sql)
-        except Exception as exc:
+        except Exception:
             error_text = (
                 "Die Auswertung konnte so nicht berechnet werden. "
                 "Bitte frage nach einer klaren Kennzahl, einem Zeitraum oder einer Gruppierung."
@@ -326,7 +326,7 @@ def render_ai_agent() -> None:
         with st.spinner("Antwort formulieren ..."):
             try:
                 answer = explain_result(provider, api_key, model, question, result)
-            except Exception as exc:
+            except Exception:
                 answer = (
                     "Ergebnis siehe Tabelle. Die automatische Erklaerung ist im Moment nicht verfuegbar."
                 )

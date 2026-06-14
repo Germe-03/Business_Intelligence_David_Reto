@@ -8,9 +8,9 @@ und Zuerich FIDS-Daten (CSV).
 ## WHAT
 - **Sprache:** Python 3.12
 - **Architektur:** Clean Architecture (Domain -> Application -> Interfaces -> Infrastructure)
-- **ORM:** SQLAlchemy
+- **Datenzugriff:** Direkte Reads der `.tsv.zst`-Dumps via pandas (Runway-Kontext) und DuckDB (BI-Views) - kein ORM
 - **Dashboard:** Streamlit + Plotly
-- **ML:** scikit-learn (RandomForest)
+- **ML:** scikit-learn (RandomForest) - geplant, noch nicht implementiert
 - **Tests:** pytest (Unit -> Integration -> E2E)
 
 ## HOW

@@ -1,16 +1,25 @@
+# Kern: Datenzugriff & Dashboard
 pandas
-sqlalchemy
-pymysql
 zstandard
+duckdb>=1.1.0
 streamlit
 plotly
-scikit-learn
-joblib
-duckdb>=1.1.0
+requests
+
+# Karten / OSINT
 pydeck
-openai>=1.40.0
-anthropic>=0.40.0
 folium>=0.16
 streamlit-folium>=0.21
 streamlit-keplergl>=0.3
-requests
+
+# KI-Analyst (Provider werden lazy importiert)
+openai>=1.40.0
+anthropic>=0.40.0
+
+# ML (geplant, noch nicht im Code verwendet)
+scikit-learn
+joblib
+
+# Tests (siehe CLAUDE.md / AGENTS.md)
+pytest
+pytest-cov

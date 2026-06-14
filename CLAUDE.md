@@ -29,7 +29,7 @@ Datenfluss für den Haupt-Use-Case (Runway-Empfehlung):
 1. `dashboard/runway_view.py` rendert das Streamlit-UI und ruft `RunwayDecisionController` auf (via `@st.cache_resource`).
 2. `src/interfaces/runway_controller.py` baut aus UI-Inputs `WeatherCondition` und delegiert an den Use Case.
 3. `src/application/recommend_runway.py` (`RecommendRunway`) iteriert über `ZRH_TAKEOFF_RUNWAYS` und sortiert nach `evaluate_runway`-Score.
-4. `src/domain/runway.py` ist die Regel-Engine: Wind-Komponentenzerlegung (Head-/Cross-/Tailwind), Aircraft-Limits (`light/medium/heavy`), Penalties (Sicht, Gewitter, Niederschlag), Status `RECOMMENDED/CAUTION/NOT_SUITABLE`. **Pure Python, keine Imports von SQLAlchemy/Streamlit/pandas.**
+4. `src/domain/runway.py` ist die Regel-Engine: Wind-Komponentenzerlegung (Head-/Cross-/Tailwind), Aircraft-Limits (`light/medium/heavy`), Penalties (Sicht, Gewitter, Niederschlag), Status `RECOMMENDED/CAUTION/NOT_SUITABLE`. **Pure Python, keine Imports von DuckDB/Streamlit/pandas.**
 5. `dashboard/runway_view.py` ruft parallel `BuildOperationalContext` für Wetterhistorie, Aircraft-Profil, Traffic-Load, Booking-Load - geliefert von `DumpOperationalContextRepository` (`src/infrastructure/dump_operational_context.py`), das die `.tsv.zst`-Dumps mit `pandas.read_csv(compression="zstd")` chunkweise liest und mit `@lru_cache` cached.
 6. Optional: `OllamaRunwayExplainer` baut aus `RunwayDecisionContext` einen Prompt (`build_runway_explanation_prompt`) und generiert eine Erklärung; bei Fehler liefert `build_fallback_explanation` einen deterministischen Text.
 
@@ -47,7 +47,7 @@ Repository-Ports werden als `typing.Protocol` in `application/` definiert (z.B. 
 ## Constraints
 
 - `booking` hat 24 Chunks à ~2.3 Mio Zeilen (~55 Mio gesamt) - immer nur Chunk 0 laden (`flughafendb_large@booking@0.tsv.zst`).
-- Domain-Schicht (`src/domain/`) darf **nie** SQLAlchemy, Streamlit oder pandas importieren - sonst bricht die Dependency Rule.
+- Domain-Schicht (`src/domain/`) darf **nie** DuckDB, Streamlit oder pandas importieren - sonst bricht die Dependency Rule.
 - Neue externe Datendateien gehören in `Data/external/`, nicht ins Repo.
 - Dashboard-Code (`dashboard/`) muss ISO 9241 einhalten: `docs/MMI_PRINCIPLES.md` konsultieren bevor UI geändert wird (Labels mit Einheiten, keine DB-IDs sichtbar, konsistente Farben).
 - TDD: Red → Green → Refactor. Unit-Tests ohne IO, Fake-Repos via Port-Protocols.

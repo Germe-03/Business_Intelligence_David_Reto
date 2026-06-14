@@ -7,9 +7,7 @@ ausloest.
 """
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass
-from typing import Optional
 
 import pandas as pd
 import requests
@@ -30,26 +28,6 @@ _STATE_COLUMNS = [
     "true_track_deg", "vertical_rate_mps", "sensors", "geo_altitude_m",
     "squawk", "spi", "position_source", "category",
 ]
-
-
-@dataclass(frozen=True)
-class OpenSkyConfig:
-    bbox: dict = None
-    username: str | None = None
-    password: str | None = None
-    timeout_s: int = 15
-
-
-def _bbox(config: OpenSkyConfig | None) -> dict:
-    if config and config.bbox:
-        return config.bbox
-    return ZRH_BBOX
-
-
-def _auth(config: OpenSkyConfig | None) -> Optional[tuple[str, str]]:
-    if config and config.username and config.password:
-        return (config.username, config.password)
-    return None
 
 
 @st.cache_data(ttl=30, show_spinner=False)
@@ -89,7 +67,7 @@ class FlightStats:
 
 def summarise(df: pd.DataFrame) -> FlightStats:
     if df.empty:
-        return FlightStats(0, 0, 0, 0, 0.0, 0.0, pd.Timestamp.utcnow())
+        return FlightStats(0, 0, 0, 0, 0.0, 0.0, pd.Timestamp.now(tz="UTC"))
     on_ground = int(df["on_ground"].fillna(False).astype(bool).sum())
     return FlightStats(
         total=len(df),
@@ -98,5 +76,5 @@ def summarise(df: pd.DataFrame) -> FlightStats:
         countries=int(df["origin_country"].nunique()),
         avg_altitude_ft=float(df["altitude_ft"].dropna().mean() or 0),
         avg_speed_kmh=float(df["velocity_kmh"].dropna().mean() or 0),
-        fetched_at=df["server_time"].iloc[0] if "server_time" in df.columns else pd.Timestamp.utcnow(),
+        fetched_at=df["server_time"].iloc[0] if "server_time" in df.columns else pd.Timestamp.now(tz="UTC"),
     )
